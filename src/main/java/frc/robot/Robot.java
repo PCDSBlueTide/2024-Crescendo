@@ -7,7 +7,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-
+import edu.wpi.first.wpilibj.PS5Controller;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -19,6 +20,10 @@ public class Robot extends TimedRobot {
 
   private RobotContainer m_robotContainer;
 
+  //DifferentialDrive frontDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
+  //DifferentialDrive rearDrive = new DifferentialDrive(motorRearLeft, motorRearRight);
+
+  PS5Controller controller = new PS5Controller(0);
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
