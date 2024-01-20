@@ -21,10 +21,12 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
+  
   private CANSparkMax motorFrontLeft = new CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorFrontRight = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearLeft = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearRight = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
+
   DifferentialDrive frontDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
   DifferentialDrive rearDrive = new DifferentialDrive(motorRearLeft, motorRearRight);
 
