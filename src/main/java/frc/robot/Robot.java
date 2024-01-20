@@ -4,11 +4,13 @@
 
 package frc.robot;
 
+import com.revrobotics.CANSparkLowLevel;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj.PS5Controller;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import com.revrobotics.CANSparkMax;
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -19,9 +21,12 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
-
-  //DifferentialDrive frontDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
-  //DifferentialDrive rearDrive = new DifferentialDrive(motorRearLeft, motorRearRight);
+  private CANSparkMax motorFrontLeft = new CANSparkMax(1, CANSparkLowLevel.MotorType.kBrushed);
+  private CANSparkMax motorFrontRight = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushed);
+  private CANSparkMax motorRearLeft = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
+  private CANSparkMax motorRearRight = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
+  DifferentialDrive frontDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
+  DifferentialDrive rearDrive = new DifferentialDrive(motorRearLeft, motorRearRight);
 
   PS5Controller controller = new PS5Controller(0);
   /**
