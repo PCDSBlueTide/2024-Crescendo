@@ -88,7 +88,7 @@ public class Robot extends TimedRobot {
     else
     {
       frontDrive.arcadeDrive(controller.getRightX(), controller.getRightY());
-      frontDrive.arcadeDrive(controller.getRightX(), controller.getRightY());
+      rearDrive.arcadeDrive(controller.getRightX(), controller.getRightY());
     }
   }
 
