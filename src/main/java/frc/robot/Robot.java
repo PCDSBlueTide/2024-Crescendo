@@ -4,11 +4,13 @@
 
 package frc.robot;
 
-import com.revrobotics.CANSparkLowLevel;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.PS5Controller;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
+
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkLowLevel;
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -27,7 +29,7 @@ public class Robot extends TimedRobot {
 
   private PS5Controller controller = new PS5Controller(0);
 
-  private boolean isDisabled = false;
+  private int count = 0;
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -47,10 +49,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    if(controller.getCrossButton())
-    {
-      isDisabled = true;
-    }
+
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -72,23 +71,32 @@ public class Robot extends TimedRobot {
 
   @Override
   public void teleopInit() {
-
+    
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    if(isDisabled)
+    if(controller.getCrossButtonReleased())
     {
-      motorFrontLeft.stopMotor();
-      motorFrontRight.stopMotor();
-      motorRearLeft.stopMotor();
-      motorRearRight.stopMotor();
+      count++;
     }
-    else
+    switch(count%2+1)
     {
-      diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
+      case 1:
+        motorState(motorFrontLeft, true);
+        motorState(motorFrontRight, true);
+        motorState(motorRearLeft, true);
+        motorState(motorRearRight, true);
+        break;
+      case 2:
+        motorState(motorFrontLeft, false);
+        motorState(motorFrontRight, false);
+        motorState(motorRearLeft, false);
+        motorState(motorRearRight, false);
+        break;
     }
+    diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
   }
 
   @Override
@@ -107,4 +115,16 @@ public class Robot extends TimedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {}
+
+  public void motorState(MotorController motor, boolean isEnabled)
+  {
+    if(isEnabled)
+    {
+      motor.set(0);
+    }
+    else
+    {
+      motor.stopMotor();
+    }
+  }
 }
