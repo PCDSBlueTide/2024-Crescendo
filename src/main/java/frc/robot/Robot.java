@@ -11,6 +11,9 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel;
+
+import java.util.ArrayList;
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -24,6 +27,7 @@ public class Robot extends TimedRobot {
   private CANSparkMax motorFrontRight = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearLeft = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearRight = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
+  private ArrayList<CANSparkMax> motors  = new ArrayList(4);
 
   private DifferentialDrive diffDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
 
@@ -36,6 +40,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    motors.add(motorFrontLeft);
+    motors.add(motorFrontRight);
+    motors.add(motorRearLeft);
+    motors.add(motorRearRight);
     motorRearLeft.follow(motorFrontLeft);
     motorRearRight.follow(motorFrontRight);
   }
@@ -84,19 +92,9 @@ public class Robot extends TimedRobot {
     switch(count%2+1)
     {
       case 1:
-        motorState(motorFrontLeft, true);
-        motorState(motorFrontRight, true);
-        motorState(motorRearLeft, true);
-        motorState(motorRearRight, true);
-        break;
+        diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
       case 2:
-        motorState(motorFrontLeft, false);
-        motorState(motorFrontRight, false);
-        motorState(motorRearLeft, false);
-        motorState(motorRearRight, false);
-        break;
     }
-    diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
   }
 
   @Override
