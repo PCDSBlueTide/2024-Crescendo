@@ -23,8 +23,7 @@ public class Robot extends TimedRobot {
   private CANSparkMax motorRearLeft = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearRight = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
 
-  private DifferentialDrive frontDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
-  private DifferentialDrive rearDrive = new DifferentialDrive(motorRearLeft, motorRearRight);
+  private DifferentialDrive diffDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
 
   private PS5Controller controller = new PS5Controller(0);
 
@@ -35,7 +34,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-
+    motorRearLeft.follow(motorFrontLeft);
+    motorRearRight.follow(motorFrontRight);
   }
 
   /**
@@ -87,8 +87,7 @@ public class Robot extends TimedRobot {
     }
     else
     {
-      frontDrive.arcadeDrive(controller.getRightX(), controller.getRightY());
-      rearDrive.arcadeDrive(controller.getRightX(), controller.getRightY());
+      diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
     }
   }
 
