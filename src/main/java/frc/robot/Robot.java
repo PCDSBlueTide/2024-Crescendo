@@ -16,6 +16,7 @@ import java.util.ResourceBundle.Control;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import java.util.ArrayList;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -31,6 +32,7 @@ public class Robot extends TimedRobot {
   private CANSparkMax motorRearLeft = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearRight = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
   private TalonFX intakeMotor = new TalonFX(5);
+  private ArrayList<CANSparkMax> motors  = new ArrayList(4);
 
   private DifferentialDrive diffDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
 
@@ -44,6 +46,10 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    motors.add(motorFrontLeft);
+    motors.add(motorFrontRight);
+    motors.add(motorRearLeft);
+    motors.add(motorRearRight);
     motorRearLeft.follow(motorFrontLeft);
     motorRearRight.follow(motorFrontRight);
     intakeMotor.setSafetyEnabled(true);
