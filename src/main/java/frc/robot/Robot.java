@@ -6,6 +6,8 @@ package frc.robot;
 
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.PS5Controller;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
@@ -13,6 +15,8 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel;
 
 import java.util.ResourceBundle.Control;
+
+import javax.swing.text.html.parser.Element;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -32,13 +36,14 @@ public class Robot extends TimedRobot {
   private CANSparkMax motorRearLeft = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearRight = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
   private TalonFX intakeMotor = new TalonFX(5);
+  private TalonFX rightOuttakeMotor = new TalonFX(6);
+  private TalonFX leftOuttakeMotor = new TalonFX(7);
   private ArrayList<CANSparkMax> motors  = new ArrayList(4);
 
   private DifferentialDrive diffDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
 
   private PS5Controller controller = new PS5Controller(0);
-
-  private boolean enabled = true;
+  
   private boolean inputEnabled = false;
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -52,7 +57,6 @@ public class Robot extends TimedRobot {
     motors.add(motorRearRight);
     motorRearLeft.follow(motorFrontLeft);
     motorRearRight.follow(motorFrontRight);
-    intakeMotor.setSafetyEnabled(true);
   }
 
   /**
@@ -101,11 +105,27 @@ public class Robot extends TimedRobot {
       return;
     }
 
-    if (controller.getR2ButtonPressed()) {
-      intakeMotor.set(1);
+    if (controller.getR2Button()) {
+      intakeMotor.set(-0.3);
+    } else if (controller.getR1Button()) {
+      //Eject
+      intakeMotor.set(0.3);
     } else {
       intakeMotor.set(0);
     }
+
+    if (controller.getL2Button()) {
+      rightOuttakeMotor.set(0.45);
+      leftOuttakeMotor.set(-0.45);
+    } else if (controller.getL1Button()) {
+      rightOuttakeMotor.set(0.1);
+      leftOuttakeMotor.set(-0.1);
+    } else {
+      rightOuttakeMotor.set(0);
+      leftOuttakeMotor.set(0);
+    }
+
+    diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
   }
 
   @Override
