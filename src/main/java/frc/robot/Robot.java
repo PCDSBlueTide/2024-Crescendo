@@ -43,7 +43,8 @@ public class Robot extends TimedRobot {
   private DifferentialDrive diffDrive = new DifferentialDrive(motorFrontLeft, motorFrontRight);
 
   private PS5Controller controller = new PS5Controller(0);
-  
+
+  private boolean enabled = true;
   private boolean inputEnabled = false;
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -51,6 +52,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+
     motors.add(motorFrontLeft);
     motors.add(motorFrontRight);
     motors.add(motorRearLeft);
