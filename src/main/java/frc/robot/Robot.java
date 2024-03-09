@@ -19,6 +19,7 @@ import java.util.ResourceBundle.Control;
 import javax.swing.text.html.parser.Element;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 
 import java.util.ArrayList;
 
@@ -46,19 +47,23 @@ public class Robot extends TimedRobot {
 
   private boolean enabled = true;
   private boolean inputEnabled = false;
+
+  private VelocityVoltage velVolt = new VelocityVoltage(10);
+  //rps
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
   @Override
   public void robotInit() {
-
     motors.add(motorFrontLeft);
     motors.add(motorFrontRight);
     motors.add(motorRearLeft);
     motors.add(motorRearRight);
     motorRearLeft.follow(motorFrontLeft);
     motorRearRight.follow(motorFrontRight);
+
+
   }
 
   /**
@@ -108,7 +113,8 @@ public class Robot extends TimedRobot {
     }
 
     if (controller.getR2Button()) {
-      intakeMotor.set(-0.3);
+      //intakeMotor.set(-0.3);
+      intakeMotor.setControl(velVolt);
     } else if (controller.getR1Button()) {
       //Eject
       intakeMotor.set(0.3);
