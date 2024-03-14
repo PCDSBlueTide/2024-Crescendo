@@ -4,8 +4,10 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.DriverStation;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
 import edu.wpi.first.wpilibj.PS5Controller;
@@ -19,6 +21,10 @@ import java.util.ResourceBundle.Control;
 import javax.swing.text.html.parser.Element;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.Slot1Configs;
+import com.ctre.phoenix6.configs.Slot2Configs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 
 import java.util.ArrayList;
@@ -36,6 +42,8 @@ public class Robot extends TimedRobot {
   private CANSparkMax motorFrontRight = new CANSparkMax(2, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearLeft = new CANSparkMax(4, CANSparkLowLevel.MotorType.kBrushed);
   private CANSparkMax motorRearRight = new CANSparkMax(3, CANSparkLowLevel.MotorType.kBrushed);
+  private CANSparkMax liftMotorA = new CANSparkMax(9, CANSparkLowLevel.MotorType.kBrushed);
+  private CANSparkMax liftMotorB = new CANSparkMax(10, CANSparkLowLevel.MotorType.kBrushed);
   private TalonFX intakeMotor = new TalonFX(5);
   private TalonFX rightOuttakeMotor = new TalonFX(6);
   private TalonFX leftOuttakeMotor = new TalonFX(7);
@@ -48,7 +56,14 @@ public class Robot extends TimedRobot {
   private boolean enabled = true;
   private boolean inputEnabled = false;
 
-  private VelocityVoltage velVolt = new VelocityVoltage(10);
+  private VelocityVoltage velVoltIntake = new VelocityVoltage(0);
+  private VelocityVoltage velVoltRightOutake = new VelocityVoltage(0);
+  private VelocityVoltage velVoltLeftOutake = new VelocityVoltage(0);
+
+  private AddressableLED ledStrip = new AddressableLED(0);
+  private AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(30);
+
+  private Timer autoTimer = null;
   //rps
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -62,8 +77,29 @@ public class Robot extends TimedRobot {
     motors.add(motorRearRight);
     motorRearLeft.follow(motorFrontLeft);
     motorRearRight.follow(motorFrontRight);
-
-
+    liftMotorB.follow(liftMotorA);
+    var slot0Configs = new Slot0Configs();
+    slot0Configs.kV = 1/40;
+    slot0Configs.kP = 1/40;
+    slot0Configs.kI = 0.48;
+    slot0Configs.kD = 0.01;
+    var slot1Configs = new Slot1Configs();
+    slot1Configs.kV = 1/30;
+    slot1Configs.kP = 1/30;
+    slot1Configs.kI = 0.48;
+    slot1Configs.kD = 0.01;
+    var slot2Configs = new Slot2Configs();
+    slot2Configs.kV = 1/9;
+    slot2Configs.kP = 1/9;
+    slot2Configs.kI = 0.48;
+    slot2Configs.kD = 0.01;
+    intakeMotor.getConfigurator().apply(slot0Configs, 0.050);
+    rightOuttakeMotor.getConfigurator().apply(slot1Configs, 0.050);
+    leftOuttakeMotor.getConfigurator().apply(slot1Configs, 0.050); 
+    rightOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050);
+    leftOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050); 
+    ledStrip.setLength(ledBuffer.getLength());
+    setAllLights(0, 255, 0);
   }
 
   /**
@@ -75,7 +111,18 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    if (controller.getCrossButtonPressed()) {
+      enabled = !enabled;
+    }
 
+    if (!enabled) {
+      setAllLights(255, 0, 0);
+      motors.forEach((motor) -> motor.set(0));
+      liftMotorA.set(0);
+      intakeMotor.set(0);
+      rightOuttakeMotor.set(0);
+      leftOuttakeMotor.set(0);
+    }
   }
 
   /** This function is called once each time the robot enters Disabled mode. */
@@ -88,12 +135,31 @@ public class Robot extends TimedRobot {
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
-
+    autoTimer = new Timer();
+    autoTimer.start();
   }
 
   /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    if (!enabled) return;
+
+    double time = autoTimer.get();
+
+    if (time <= 5.0) {
+      setAllLights(255, 115, 0);
+      motors.forEach((motor) -> motor.set(0.1));
+    } else if (time <= 10.0) {
+      setAllLights(0, 255, 221);
+      motors.forEach((motor) -> motor.set(-0.1));
+    } else if (time <= 15) {
+      setAllLights(255, 0, 68);
+    } else {
+      //Shouldnt be on
+      autoTimer.stop();
+      return;
+    }
+  }
 
   @Override
   public void teleopInit() {
@@ -103,31 +169,36 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    if (controller.getCrossButtonPressed()) {
-      enabled = !enabled;
+    if (!enabled) return;
+    if (controller.getCircleButton())
+    {
+      liftMotorA.set(0.3);
+    }
+    else if (controller.getSquareButton())
+    {
+      liftMotorA.set(-0.3);
+    }
+    else
+    {
+      liftMotorA.set(0);
     }
     
-    if (!enabled) {
-      intakeMotor.stopMotor();
-      return;
-    }
-
     if (controller.getR2Button()) {
       //intakeMotor.set(-0.3);
-      intakeMotor.setControl(velVolt);
+      velVoltIntake.Slot = 0;
+      intakeMotor.setControl(velVoltIntake.withVelocity(-40));
+      setAllLights(50, 200, 255);
     } else if (controller.getR1Button()) {
-      //Eject
+      //Eject 
       intakeMotor.set(0.3);
     } else {
       intakeMotor.set(0);
     }
-
     if (controller.getL2Button()) {
-      rightOuttakeMotor.set(0.45);
-      leftOuttakeMotor.set(-0.45);
-    } else if (controller.getL1Button()) {
-      rightOuttakeMotor.set(0.1);
-      leftOuttakeMotor.set(-0.1);
+      shootSpeaker();
+    } 
+    else if (controller.getL1Button()) {
+      shootAmp();
     } else {
       rightOuttakeMotor.set(0);
       leftOuttakeMotor.set(0);
@@ -153,4 +224,40 @@ public class Robot extends TimedRobot {
   @Override
   public void simulationPeriodic() {}
 
+  /**
+   * Sets all the lights to one color
+   * @param r red
+   * @param g green
+   * @param b blue
+  */
+  private void setAllLights(int r, int g, int b) {
+    for (var i = 0; i < ledBuffer.getLength(); i++) {
+      ledBuffer.setRGB(i, r, g, b);
+    }
+    ledStrip.setData(ledBuffer);
+  }
+
+  /**
+   * Shoots on the speaker with 30 velocity
+   */
+  private void shootSpeaker() {
+    velVoltRightOutake.Slot = 1;
+    rightOuttakeMotor.setControl(velVoltRightOutake.withVelocity(30));
+    velVoltLeftOutake.Slot = 1;
+    leftOuttakeMotor.setControl(velVoltLeftOutake.withVelocity(-30));
+    //DriverStation.reportWarning("Leftoutake Speed: " + leftOuttakeMotor.getVelocity() + " Rightoutake Speed: " + rightOuttakeMotor.getVelocity(), false);
+    setAllLights(0, 0, 255);
+  }
+
+  /**
+   * Shoots on the amp with 9 velocity
+   */
+  private void shootAmp() {
+    velVoltRightOutake.Slot = 2;
+    rightOuttakeMotor.setControl(velVoltRightOutake.withVelocity(9));
+    velVoltLeftOutake.Slot = 2;
+    leftOuttakeMotor.setControl(velVoltLeftOutake.withVelocity(-9));
+    DriverStation.reportWarning("Leftoutake Speed: " + leftOuttakeMotor.getVelocity() + " Rightoutake Speed: " + rightOuttakeMotor.getVelocity(), false);
+    setAllLights(255, 0, 255);
+  }
 }
