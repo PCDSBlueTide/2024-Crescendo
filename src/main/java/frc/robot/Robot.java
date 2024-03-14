@@ -79,25 +79,25 @@ public class Robot extends TimedRobot {
     motorRearRight.follow(motorFrontRight);
     liftMotorB.follow(liftMotorA);
     var slot0Configs = new Slot0Configs();
-    slot0Configs.kV = 1/40;
-    slot0Configs.kP = 1/40;
+    slot0Configs.kV = (double) 1 /40;
+    slot0Configs.kP = (double) 1 /40;
     slot0Configs.kI = 0.48;
     slot0Configs.kD = 0.01;
     var slot1Configs = new Slot1Configs();
-    slot1Configs.kV = 1/30;
-    slot1Configs.kP = 1/30;
+    slot1Configs.kV = (double) 1 /30;
+    slot1Configs.kP = (double) 1 /30;
     slot1Configs.kI = 0.48;
     slot1Configs.kD = 0.01;
     var slot2Configs = new Slot2Configs();
-    slot2Configs.kV = 1/9;
-    slot2Configs.kP = 1/9;
+    slot2Configs.kV = (double) 1 /9;
+    slot2Configs.kP = (double) 1 /9;
     slot2Configs.kI = 0.48;
     slot2Configs.kD = 0.01;
     intakeMotor.getConfigurator().apply(slot0Configs, 0.050);
     rightOuttakeMotor.getConfigurator().apply(slot1Configs, 0.050);
-    leftOuttakeMotor.getConfigurator().apply(slot1Configs, 0.050); 
+    leftOuttakeMotor.getConfigurator().apply(slot1Configs, 0.050);
     rightOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050);
-    leftOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050); 
+    leftOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050);
     ledStrip.setLength(ledBuffer.getLength());
     setAllLights(0, 255, 0);
   }
@@ -146,24 +146,22 @@ public class Robot extends TimedRobot {
 
     double time = autoTimer.get();
 
-    if (time <= 5.0) {
+    if (time <= 3.0) {
+      shootSpeaker();
       setAllLights(255, 115, 0);
-      motors.forEach((motor) -> motor.set(0.1));
-    } else if (time <= 10.0) {
+    } else if (time <= 6.0) {
+      shootSpeaker();
+      intake();
       setAllLights(0, 255, 221);
-      motors.forEach((motor) -> motor.set(-0.1));
-    } else if (time <= 15) {
-      setAllLights(255, 0, 68);
     } else {
       //Shouldnt be on
       autoTimer.stop();
-      return;
     }
   }
 
   @Override
   public void teleopInit() {
-    
+
   }
 
   /** This function is called periodically during operator control. */
@@ -182,12 +180,10 @@ public class Robot extends TimedRobot {
     {
       liftMotorA.set(0);
     }
-    
+
     if (controller.getR2Button()) {
-      //intakeMotor.set(-0.3);
-      velVoltIntake.Slot = 0;
-      intakeMotor.setControl(velVoltIntake.withVelocity(-40));
-      setAllLights(50, 200, 255);
+        intake();
+        setAllLights(50, 200, 255);
     } else if (controller.getR1Button()) {
       //Eject 
       intakeMotor.set(0.3);
@@ -196,7 +192,7 @@ public class Robot extends TimedRobot {
     }
     if (controller.getL2Button()) {
       shootSpeaker();
-    } 
+    }
     else if (controller.getL1Button()) {
       shootAmp();
     } else {
@@ -207,7 +203,16 @@ public class Robot extends TimedRobot {
     diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
   }
 
-  @Override
+    /**
+     * Runs the intake
+      */
+  private void intake() {
+      //intakeMotor.set(-0.3);
+      velVoltIntake.Slot = 0;
+      intakeMotor.setControl(velVoltIntake.withVelocity(-40));
+  }
+
+    @Override
   public void testInit() {
 
   }
@@ -229,7 +234,7 @@ public class Robot extends TimedRobot {
    * @param r red
    * @param g green
    * @param b blue
-  */
+   */
   private void setAllLights(int r, int g, int b) {
     for (var i = 0; i < ledBuffer.getLength(); i++) {
       ledBuffer.setRGB(i, r, g, b);
