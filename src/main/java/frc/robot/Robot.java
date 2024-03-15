@@ -10,8 +10,11 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.PS5Controller;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel;
@@ -27,6 +30,7 @@ import com.ctre.phoenix6.configs.Slot2Configs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 
+import java.sql.Driver;
 import java.util.ArrayList;
 
 /**
@@ -54,7 +58,8 @@ public class Robot extends TimedRobot {
   private PS5Controller controller = new PS5Controller(0);
 
   private boolean enabled = true;
-  private boolean inputEnabled = false;
+  private boolean hasNote = false;
+  
 
   private VelocityVoltage velVoltIntake = new VelocityVoltage(0);
   private VelocityVoltage velVoltRightOutake = new VelocityVoltage(0);
@@ -64,6 +69,13 @@ public class Robot extends TimedRobot {
   private AddressableLEDBuffer ledBuffer = new AddressableLEDBuffer(30);
 
   private Timer autoTimer = null;
+  private final Timer moveTimer = new Timer();
+  private final Timer unmoveTimer = new Timer();
+  private final Timer shootTimer = new Timer();
+
+  private final SendableChooser<Double> speakerSpeed = new SendableChooser<>();
+
+  private DigitalInput noteLimitSwitch = new DigitalInput(0);
   //rps
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -99,7 +111,14 @@ public class Robot extends TimedRobot {
     rightOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050);
     leftOuttakeMotor.getConfigurator().apply(slot2Configs, 0.050);
     ledStrip.setLength(ledBuffer.getLength());
-    setAllLights(0, 255, 0);
+    ledStrip.setData(ledBuffer);
+    ledStrip.start();
+    speakerSpeed.addOption("Slow", 30.0);
+    speakerSpeed.setDefaultOption("Normal", 40.0);
+    speakerSpeed.addOption("+5", 45.0);
+    speakerSpeed.addOption("+10", 50.0);
+    SmartDashboard.putData(speakerSpeed);
+
   }
 
   /**
@@ -111,6 +130,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    SmartDashboard.putBoolean("noteIn", noteLimitSwitch.get());
     if (controller.getCrossButtonPressed()) {
       enabled = !enabled;
     }
@@ -130,32 +150,65 @@ public class Robot extends TimedRobot {
   public void disabledInit() {}
 
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+        setAllLights(255, 0, 0);
+  }
 
   /** This autonomous runs the autonomous command selected by your {@link RobotContainer} class. */
   @Override
   public void autonomousInit() {
     autoTimer = new Timer();
     autoTimer.start();
+    shootTimer.stop();
+    unmoveTimer.stop();
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+
     if (!enabled) return;
 
     double time = autoTimer.get();
 
-    if (time <= 3.0) {
+    if (time <= 1.0) {
       shootSpeaker();
       setAllLights(255, 115, 0);
-    } else if (time <= 6.0) {
+    } else if (time <= 2.0) {
       shootSpeaker();
       intake();
       setAllLights(0, 255, 221);
-    } else {
+    } else if (time <= 7.0 && !noteLimitSwitch.get()) {
+      moveTimer.start();
+      intake();
+      stopOutake();
+      diffDrive.arcadeDrive(-0.15, 0);
+    } 
+    else {
+      moveTimer.stop();
       //Shouldnt be on
-      autoTimer.stop();
+      hasNote = true;
+    }
+    if(hasNote) {
+      unmoveTimer.start();
+      if(unmoveTimer.get() <= moveTimer.get()) {
+        diffDrive.arcadeDrive(0.15, 0);
+      }
+      else {
+        hasNote = false;
+      }
+    }
+    else if(unmoveTimer.get() >= moveTimer.get()) {
+      shootTimer.start();
+      if(shootTimer.get() <= 1.0) {
+        shootSpeaker();
+        setAllLights(255, 115, 0);
+      }
+      else if(shootTimer.get() <= 2.0)  {
+        shootSpeaker();
+        intake();
+        setAllLights(0, 255, 221);
+      }
     }
   }
 
@@ -167,17 +220,14 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    if (!enabled) return;
-    if (controller.getCircleButton())
-    {
-      liftMotorA.set(0.3);
+    setAllLights(0, 255, 0);
+    if (controller.getCircleButton()) {
+      liftMotorA.set(0.6);
     }
-    else if (controller.getSquareButton())
-    {
-      liftMotorA.set(-0.3);
+    else if (controller.getSquareButton()) {
+      liftMotorA.set(-0.6);
     }
-    else
-    {
+    else {
       liftMotorA.set(0);
     }
 
@@ -195,12 +245,17 @@ public class Robot extends TimedRobot {
     }
     else if (controller.getL1Button()) {
       shootAmp();
-    } else {
+    }
+    else if (controller.getPSButton()) {
+      reverseShooter();
+    }
+    else {
       rightOuttakeMotor.set(0);
       leftOuttakeMotor.set(0);
     }
 
     diffDrive.arcadeDrive(-controller.getRightX(), -controller.getRightY());
+    DriverStation.reportWarning(""+noteLimitSwitch.get(), false);
   }
 
     /**
@@ -246,11 +301,12 @@ public class Robot extends TimedRobot {
    * Shoots on the speaker with 30 velocity
    */
   private void shootSpeaker() {
+    double speed = speakerSpeed.getSelected();
     velVoltRightOutake.Slot = 1;
-    rightOuttakeMotor.setControl(velVoltRightOutake.withVelocity(30));
+    rightOuttakeMotor.setControl(velVoltRightOutake.withVelocity(speed));
     velVoltLeftOutake.Slot = 1;
-    leftOuttakeMotor.setControl(velVoltLeftOutake.withVelocity(-30));
-    //DriverStation.reportWarning("Leftoutake Speed: " + leftOuttakeMotor.getVelocity() + " Rightoutake Speed: " + rightOuttakeMotor.getVelocity(), false);
+    leftOuttakeMotor.setControl(velVoltLeftOutake.withVelocity(-speed));
+    SmartDashboard.putString("outakeSpeed", "Leftoutake Speed: " + leftOuttakeMotor.getVelocity() + " Rightoutake Speed: " + rightOuttakeMotor.getVelocity());
     setAllLights(0, 0, 255);
   }
 
@@ -258,11 +314,21 @@ public class Robot extends TimedRobot {
    * Shoots on the amp with 9 velocity
    */
   private void shootAmp() {
+    double speed = 9.0;
     velVoltRightOutake.Slot = 2;
-    rightOuttakeMotor.setControl(velVoltRightOutake.withVelocity(9));
+    rightOuttakeMotor.setControl(velVoltRightOutake.withVelocity(speed));
     velVoltLeftOutake.Slot = 2;
-    leftOuttakeMotor.setControl(velVoltLeftOutake.withVelocity(-9));
-    DriverStation.reportWarning("Leftoutake Speed: " + leftOuttakeMotor.getVelocity() + " Rightoutake Speed: " + rightOuttakeMotor.getVelocity(), false);
+    leftOuttakeMotor.setControl(velVoltLeftOutake.withVelocity(-speed));
+    SmartDashboard.putString("outakeSpeed", "Leftoutake Speed: " + leftOuttakeMotor.getVelocity() + " Rightoutake Speed: " + rightOuttakeMotor.getVelocity());
     setAllLights(255, 0, 255);
+  }
+
+  private void stopOutake() {
+    rightOuttakeMotor.set(0);
+    leftOuttakeMotor.set(0);
+  }
+  private void reverseShooter() {
+    rightOuttakeMotor.set(-0.1);
+    leftOuttakeMotor.set(-0.1);
   }
 }
